@@ -16,10 +16,10 @@ Of course, where I said “you” in the paragraph above, I actually meant me.
 So.
 
 `cd-or-clone` remembers where things are.
-If you set it up as a hook in Zsh, it will record local locations ang origins of all repos you work with,
+If you set it up as a hook in Zsh, it will record local locations and origins of all repos you work with,
 and then allow you to quickly retrieve them.
 
-The default location of the store is `~/.local/cd-or-clone.store`, though you can set a different one in `$CD_OR_CLONE_STORE` environment variable.
+The default location of the store is `~/.local/cd-or-clone.store`, though you can set a different one in the `$CD_OR_CLONE_STORE` environment variable.
 I recommend you make the store a part of your dotfiles repo, or sync it somehow else.
 In your `.zshrc` you put
 
@@ -49,3 +49,5 @@ installs the script (but not Zsh or Fzf).
 
 Sets up Zsh hooks and the `Ctrl-G` keybinding.
 You can also run `cd-or-clone zsh` to see what it does and modify to taste.
+
+Enjoy.
