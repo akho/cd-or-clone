@@ -1,0 +1,110 @@
+#!/usr/bin/env perl
+
+use strict; use warnings; use v5.18;
+
+use Cwd qw( abs_path getcwd );
+use Storable;
+use Env qw( HOME );
+
+sub home_to_abs {
+    my $h = shift;
+    $h =~ s/^~/$HOME/;
+    return $h;
+}
+sub abs_to_home {
+    my $h = shift;
+    $h =~ s/^$HOME/~/;
+    return $h;
+}
+
+my $COC_STORE = $ENV{'CD_OR_CLONE_STORE'} || "$HOME/.local/cd-or-clone.store";
+
+my $USAGE = "
+Usage:
+
+    cd-or-clone add [folder]
+
+Add folder (defaults to current working directory) to the store. Fails if folder is not inside a Git worktree.
+
+    cd-or-clone list
+
+List store entries.
+
+    cd-or-clone retrieve [folder]
+
+Create and clone folder unless it exists. Prints absolute path to folder to stdout.
+
+Typical usage is
+
+    cd \$(cd-or-clone retrieve \$(cd-or-clone list | fzf)) 
+
+In combination with a shell hook that attempts `cd-or-clone add` on every cd. The shell hook can be set up by putting
+
+    eval \"\$(cd-or-clone zsh)\"
+
+in your .zshrc. It adds a map for Ctrl-G to run the above cd command, and sets up a hook to `cd-or-clone add` on every directory change. 
+";
+
+my $command = shift or die $USAGE;
+
+# Load store
+my %store = ( version => '0.1.0', git => {} );
+store \%store, $COC_STORE unless (-e $COC_STORE);
+%store = %{ retrieve $COC_STORE };
+my $git = $store{'git'};
+
+if ($command eq 'add') { ################################################## ADD
+    # Get path from command line, convert to root of Git worktree
+    my $path = abs_path(shift or getcwd()); 
+    my $in_git = `cd $path ; git rev-parse --is-inside-work-tree 2> /dev/null` =~ 'true'; 
+    die "$path is not in a git work tree" unless $in_git;
+    $path = `cd $path ; git rev-parse --show-toplevel`;
+    chomp $path;
+
+    # Git origin
+    my $origin = `cd $path ; git config --get remote.origin.url`;
+    chomp $origin;
+
+    $path = abs_to_home $path;
+    $git->{$path} = $origin;
+    store \%store, $COC_STORE;
+    say "Origin $origin saved for Git worktree at $path";
+}
+elsif ($command eq 'list') { ############################################# LIST
+    foreach my $p (keys %$git) {
+        say home_to_abs $p;
+    }
+}
+elsif ($command eq 'retrieve') { ##################################### RETRIEVE
+    my $path = abs_to_home abs_path shift or die $USAGE;
+    unless (exists $git->{$path}) {
+        die "$path not in store; you have to run $0 add on a valid Git worktree to add it to the store.";
+    }
+    my $origin = $git->{$path};
+    $path = home_to_abs $path;
+    `mkdir -p $path`;
+    `git clone --recurse-submodules $origin $path >&2` unless (-d $path);
+    say $path;
+}
+elsif ($command eq 'zsh') { ############################################### ZSH
+    print "
+        function cd-or-clone-retrieve() { 
+            cd \"\$($0 retrieve \$($0 list | fzf))\" 
+            local precmd
+            for precmd in \$precmd_functions; do
+                \$precmd
+            done
+            zle reset-prompt
+        }
+        zle -N cd-or-clone-retrieve
+        bindkey '^G' cd-or-clone-retrieve
+
+        function __cd-or-clone_add() {
+            $0 add 2>/dev/null >/dev/null
+        }
+        autoload -Uz add-zsh-hook
+        add-zsh-hook chpwd __cd-or-clone_add
+    ";
+}
+else { die $USAGE };
+
