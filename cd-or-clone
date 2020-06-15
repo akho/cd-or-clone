@@ -82,7 +82,6 @@ elsif ($command eq 'retrieve') { ##################################### RETRIEVE
     }
     my $origin = $git->{$path};
     $path = home_to_abs $path;
-    `mkdir -p $path`;
     `git clone --recurse-submodules $origin $path >&2` unless (-d $path);
     say $path;
 }
