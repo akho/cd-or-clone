@@ -16,7 +16,7 @@ Of course, where I said “you” in the paragraph above, I actually meant me.
 So.
 
 `cd-or-clone` remembers where things are.
-If you set it up as a hook in Zsh, it will record local locations and origins of all repos you work with,
+If you set it up as a hook in [Zsh](http://zsh.sourceforge.net/), it will record local locations and origins of all repos you work with,
 and then allow you to quickly retrieve them.
 
 The default location of the store is `~/.local/cd-or-clone.store`, though you can set a different one in the `$CD_OR_CLONE_STORE` environment variable.
@@ -26,7 +26,7 @@ In your `.zshrc` you put
     eval $(cd-or-clone zsh)
 
 That sets up a cd hook, which will record all your repos and origins in the store as you go.
-To go somewhere, press `Ctrl-G`. It will put you in a Fzf with all the folders cd-or-clone remembers.
+To go somewhere, press `Ctrl-G`. It will put you in a [Fzf](https://github.com/junegunn/fzf) with all the folders cd-or-clone remembers.
 When you choose one, you’ll either be magically transported there (via `cd`),
 or, if the folder sadly does not exist,
 cd-or-clone will `git clone` it from the origin it recorded.
@@ -37,9 +37,9 @@ If you are not on Zsh, run cd-or-clone to see the options.
 
 You need to have a recent Perl installed.
 You probably do.
-I recommend also having Fzf in your path, and Zsh provides the easiest experience.
+I recommend also having [Fzf](https://github.com/junegunn/fzf) in your path, and [Zsh](http://zsh.sourceforge.net/) provides the easiest experience.
 
-If you have Nix,
+If you have [Nix](https://nixos.org/),
 
     nix-env -i -f .
 
