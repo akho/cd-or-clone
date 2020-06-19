@@ -42,7 +42,11 @@ In combination with a shell hook that attempts `cd-or-clone add` on every cd. Th
 
     eval \"\$(cd-or-clone zsh)\"
 
-in your .zshrc. It adds a map for Ctrl-G to run the above cd command, and sets up a hook to `cd-or-clone add` on every directory change. 
+in your .zshrc, or
+
+    eval  \"\$(cd-or-clone bash)\"
+
+in your .bashrc. It adds a map for Ctrl-G to run the above cd command, and sets up a hook to `cd-or-clone add` on every directory change. 
 ";
 
 my $command = shift or die $USAGE;
@@ -84,6 +88,22 @@ elsif ($command eq 'retrieve') { ##################################### RETRIEVE
     $path = home_to_abs $path;
     `git clone --recurse-submodules $origin $path >&2` unless (-d $path);
     say $path;
+}
+elsif ($command eq 'bash') { ############################################### ZSH
+    print "
+        cd-or-clone-retrieve() { 
+            cd \"`$0 retrieve \$( $0 list | fzf )`\"; 
+        };
+        bind '\"\\C-g\":\"cd-or-clone-retrieve\\n\"';
+
+        __cd-or-clone_add() {
+            $0 add 2>/dev/null >/dev/null
+        };
+        if ! [[ \"\${PROMPT_COMMAND:-}\" =~ __cd-or-clone_add ]]; then
+          PROMPT_COMMAND=\"__cd-or-clone_add\${PROMPT_COMMAND:+;\$PROMPT_COMMAND}\"
+        fi
+        
+    ";
 }
 elsif ($command eq 'zsh') { ############################################### ZSH
     print "

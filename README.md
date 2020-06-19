@@ -31,7 +31,13 @@ When you choose one, you’ll either be magically transported there (via `cd`),
 or, if the folder sadly does not exist,
 cd-or-clone will `git clone` it from the origin it recorded.
 
-If you are not on Zsh, run cd-or-clone to see the options.
+For Bash, use
+
+    eval $(cd-or-clone zsh)
+
+in `.bashrc` to get the same thing.
+
+If you are not on Zsh or Bash, run `cd-or-clone` to see the options.
 
 ## Installation
 
@@ -49,5 +55,7 @@ installs the script (but not Zsh or Fzf).
 
 Sets up Zsh hooks and the `Ctrl-G` keybinding.
 You can also run `cd-or-clone zsh` to see what it does and modify to taste.
+
+`cd-or-clone bash` does the same things for Bash.
 
 Enjoy.
