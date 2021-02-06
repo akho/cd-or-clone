@@ -52,26 +52,23 @@ in your .zshrc, or
 in your .bashrc. It adds a map for Ctrl-G to run the above cd command, and sets up a hook to `cd-or-clone add` on every directory change. 
 ";
 
-my $command = shift or die $USAGE;
-
 # Load store
 my %store = ( version => '0.1.0', git => {} );
 store \%store, $COC_STORE unless (-e $COC_STORE);
 %store = %{ retrieve $COC_STORE };
 my $git = $store{'git'};
 
-given ($command) {
+given (shift) {
     when ('add') {
         # Get path from command line, convert to root of Git worktree
         my $path = abs_path(shift or getcwd());
-        my $in_git = `cd $path ; $git_cmd rev-parse --is-inside-work-tree 2> /dev/null` =~ 'true';
+        my $in_git = `cd "$path" ; "$git_cmd" rev-parse --is-inside-work-tree 2> /dev/null` =~ 'true';
         die "$path is not in a git work tree" unless $in_git;
-        $path = `cd $path ; $git_cmd rev-parse --show-toplevel`;
+        chomp($path = `cd "$path" ; "$git_cmd" rev-parse --show-toplevel`);
         chomp $path;
 
         # Git origin
-        my $origin = `cd $path ; $git_cmd config --get remote.origin.url`;
-        chomp $origin;
+        chomp(my $origin = `cd "$path" ; "$git_cmd" config --get remote.origin.url`);
 
         $path = abs_to_home $path;
         $git->{$path} = $origin;
@@ -80,17 +77,17 @@ given ($command) {
     }
     when ('list') {
         foreach my $p (keys %$git) {
-            say home_to_abs $p;
+            say $p;
         }
     }
     when ('retrieve') {
-        my $path = abs_to_home abs_path shift or die $USAGE;
+        my $path = abs_to_home(abs_path shift) or die $USAGE;
         unless (exists $git->{$path}) {
             die "$path not in store; you have to run $0 add on a valid Git worktree to add it to the store.";
         }
         my $origin = $git->{$path};
         $path = home_to_abs $path;
-        `$git_cmd clone --recurse-submodules $origin $path >&2` unless (-d $path);
+        `"$git_cmd" clone --recurse-submodules "$origin" "$path" >&2` unless (-d $path);
         say $path;
     }
     when ('bash') {
