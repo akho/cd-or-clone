@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
-use strict; use warnings; use v5.18;
+use strict; use warnings; use v5.28;
+no warnings "experimental::smartmatch";
 
 use Cwd qw( abs_path getcwd );
 use Storable;
@@ -59,40 +60,41 @@ store \%store, $COC_STORE unless (-e $COC_STORE);
 %store = %{ retrieve $COC_STORE };
 my $git = $store{'git'};
 
-if ($command eq 'add') { ################################################## ADD
-    # Get path from command line, convert to root of Git worktree
-    my $path = abs_path(shift or getcwd()); 
-    my $in_git = `cd $path ; $git_cmd rev-parse --is-inside-work-tree 2> /dev/null` =~ 'true';
-    die "$path is not in a git work tree" unless $in_git;
-    $path = `cd $path ; $git_cmd rev-parse --show-toplevel`;
-    chomp $path;
+given ($command) {
+    when ('add') {
+        # Get path from command line, convert to root of Git worktree
+        my $path = abs_path(shift or getcwd());
+        my $in_git = `cd $path ; $git_cmd rev-parse --is-inside-work-tree 2> /dev/null` =~ 'true';
+        die "$path is not in a git work tree" unless $in_git;
+        $path = `cd $path ; $git_cmd rev-parse --show-toplevel`;
+        chomp $path;
 
-    # Git origin
-    my $origin = `cd $path ; $git_cmd config --get remote.origin.url`;
-    chomp $origin;
+        # Git origin
+        my $origin = `cd $path ; $git_cmd config --get remote.origin.url`;
+        chomp $origin;
 
-    $path = abs_to_home $path;
-    $git->{$path} = $origin;
-    store \%store, $COC_STORE;
-    say "Origin $origin saved for Git worktree at $path";
-}
-elsif ($command eq 'list') { ############################################# LIST
-    foreach my $p (keys %$git) {
-        say home_to_abs $p;
+        $path = abs_to_home $path;
+        $git->{$path} = $origin;
+        store \%store, $COC_STORE;
+        say "Origin $origin saved for Git worktree at $path";
     }
-}
-elsif ($command eq 'retrieve') { ##################################### RETRIEVE
-    my $path = abs_to_home abs_path shift or die $USAGE;
-    unless (exists $git->{$path}) {
-        die "$path not in store; you have to run $0 add on a valid Git worktree to add it to the store.";
+    when ('list') {
+        foreach my $p (keys %$git) {
+            say home_to_abs $p;
+        }
     }
-    my $origin = $git->{$path};
-    $path = home_to_abs $path;
-    `$git_cmd clone --recurse-submodules $origin $path >&2` unless (-d $path);
-    say $path;
-}
-elsif ($command eq 'bash') { ############################################### ZSH
-    print "
+    when ('retrieve') {
+        my $path = abs_to_home abs_path shift or die $USAGE;
+        unless (exists $git->{$path}) {
+            die "$path not in store; you have to run $0 add on a valid Git worktree to add it to the store.";
+        }
+        my $origin = $git->{$path};
+        $path = home_to_abs $path;
+        `$git_cmd clone --recurse-submodules $origin $path >&2` unless (-d $path);
+        say $path;
+    }
+    when ('bash') {
+        print "
         cd-or-clone-retrieve() { 
             cd \"`$0 retrieve \$( $0 list | $fzf_cmd )`\";
         };
@@ -106,9 +108,9 @@ elsif ($command eq 'bash') { ############################################### ZSH
         fi
         
     ";
-}
-elsif ($command eq 'zsh') { ############################################### ZSH
-    print "
+    }
+    when ('zsh') {
+        print "
         function cd-or-clone-retrieve() { 
             cd \"\$($0 retrieve \$($0 list | $fzf_cmd))\"
             local precmd
@@ -126,6 +128,6 @@ elsif ($command eq 'zsh') { ############################################### ZSH
         autoload -Uz add-zsh-hook
         add-zsh-hook chpwd __cd-or-clone_add
     ";
+    }
+    default { die $USAGE }
 }
-else { die $USAGE };
-
