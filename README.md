@@ -43,13 +43,13 @@ If you are not on Zsh or Bash, run `cd-or-clone` to see the options.
 
 You need to have a recent Perl installed.
 You probably do.
-I recommend also having [Fzf](https://github.com/junegunn/fzf) in your path, and [Zsh](http://zsh.sourceforge.net/) provides the easiest experience.
+I recommend also having [Fzf](https://github.com/junegunn/fzf) in your path.
 
 If you have [Nix](https://nixos.org/),
 
     nix-env -i -f .
 
-installs the script (but not Zsh or Fzf).
+installs the script.
 
     eval $(cd-or-clone zsh)
 

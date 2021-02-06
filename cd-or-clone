@@ -18,6 +18,8 @@ sub abs_to_home {
 }
 
 my $COC_STORE = $ENV{'CD_OR_CLONE_STORE'} || "$HOME/.local/cd-or-clone.store";
+my $git_cmd = $ENV{'CDORCLONE_GIT_PATH'} || "git";
+my $fzf_cmd = $ENV{'CDORCLONE_FZF_PATH'} || "fzf";
 
 my $USAGE = "
 Usage:
@@ -60,13 +62,13 @@ my $git = $store{'git'};
 if ($command eq 'add') { ################################################## ADD
     # Get path from command line, convert to root of Git worktree
     my $path = abs_path(shift or getcwd()); 
-    my $in_git = `cd $path ; git rev-parse --is-inside-work-tree 2> /dev/null` =~ 'true'; 
+    my $in_git = `cd $path ; $git_cmd rev-parse --is-inside-work-tree 2> /dev/null` =~ 'true';
     die "$path is not in a git work tree" unless $in_git;
-    $path = `cd $path ; git rev-parse --show-toplevel`;
+    $path = `cd $path ; $git_cmd rev-parse --show-toplevel`;
     chomp $path;
 
     # Git origin
-    my $origin = `cd $path ; git config --get remote.origin.url`;
+    my $origin = `cd $path ; $git_cmd config --get remote.origin.url`;
     chomp $origin;
 
     $path = abs_to_home $path;
@@ -86,13 +88,13 @@ elsif ($command eq 'retrieve') { ##################################### RETRIEVE
     }
     my $origin = $git->{$path};
     $path = home_to_abs $path;
-    `git clone --recurse-submodules $origin $path >&2` unless (-d $path);
+    `$git_cmd clone --recurse-submodules $origin $path >&2` unless (-d $path);
     say $path;
 }
 elsif ($command eq 'bash') { ############################################### ZSH
     print "
         cd-or-clone-retrieve() { 
-            cd \"`$0 retrieve \$( $0 list | fzf )`\"; 
+            cd \"`$0 retrieve \$( $0 list | $fzf_cmd )`\";
         };
         bind '\"\\C-g\":\"cd-or-clone-retrieve\\n\"';
 
@@ -108,7 +110,7 @@ elsif ($command eq 'bash') { ############################################### ZSH
 elsif ($command eq 'zsh') { ############################################### ZSH
     print "
         function cd-or-clone-retrieve() { 
-            cd \"\$($0 retrieve \$($0 list | fzf))\" 
+            cd \"\$($0 retrieve \$($0 list | $fzf_cmd))\"
             local precmd
             for precmd in \$precmd_functions; do
                 \$precmd
